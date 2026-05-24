@@ -1,6 +1,89 @@
 # Autobots Automanager
 
-REST API para gestão de uma loja de manutenção veicular. Permite cadastrar empresas, usuários, veículos, serviços, mercadorias e vendas, com navegação via HATEOAS e autenticação JWT.
+REST API para gestão de uma loja de manutenção veicular.
+
+## Requisitos
+
+- Java 17
+- MySQL 8.x rodando em `localhost:3306`
+
+## Instalação
+
+**1. Clone o repositório**
+```bash
+git clone <url-do-repo>
+cd atviii-autobots-microservico-spring
+```
+
+**2. Crie o banco de dados**
+```sql
+CREATE DATABASE base;
+```
+
+**3. Configure as credenciais** em `automanager/src/main/resources/application.properties`
+```properties
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+**4. Execute**
+```bash
+cd automanager
+./mvnw spring-boot:run
+```
+
+A API sobe em `http://localhost:8080`. Dados de exemplo são inseridos automaticamente na primeira execução.
+
+## Docker
+
+Sobe a API e o MySQL juntos, sem precisar instalar nada além do Docker.
+
+```bash
+docker compose up --build
+```
+
+Para parar:
+```bash
+docker compose down
+```
+
+> O banco é criado automaticamente. A API aguarda o MySQL estar pronto antes de iniciar.
+
+## Como usar
+
+**1. Faça login para obter o token:**
+```bash
+curl -X POST http://localhost:8080/autenticacao \
+  -H "Content-Type: application/json" \
+  -d '{"nomeUsuario":"admin","senha":"admin123"}'
+```
+
+**2. Use o token nas demais requisições:**
+```bash
+curl http://localhost:8080/usuario \
+  -H "Authorization: Bearer <token>"
+```
+
+## Usuários disponíveis
+
+| Usuário | Senha | Perfil |
+|---|---|---|
+| `admin` | `admin123` | Administrador |
+| `meuidolotemnomeeéflaviocaçarato` | `FlavioMouseHunter2011` | Gerente |
+| `dompedrofornecedor` | `123456` | Vendedor |
+| `dompedrocliente` | `123456` | Cliente |
+
+## Rotas principais
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/autenticacao` | Login |
+| GET | `/usuario` | Listar usuários |
+| GET | `/empresa` | Listar empresas |
+| GET | `/veiculo` | Listar veículos |
+| GET | `/mercadoria` | Listar mercadorias |
+| GET | `/servico` | Listar serviços |
+| GET | `/venda` | Listar vendas |
 
 ## Stack
 
@@ -9,115 +92,5 @@ REST API para gestão de uma loja de manutenção veicular. Permite cadastrar em
 | Java | 17 |
 | Spring Boot | 3.3.4 |
 | Spring Security | 6.3.x |
-| jjwt | 0.11.5 |
-| Spring HATEOAS | via Boot 3.3.4 |
-| Spring Data JPA | via Boot 3.3.4 |
-| MySQL Connector | `com.mysql:mysql-connector-j` |
-| Lombok | via Boot 3.3.4 |
-
-## Pré-requisitos
-
-- Java 17 (`/usr/lib/jvm/java-17-openjdk-amd64`)
-- MySQL 8.x rodando em `localhost:3306`
-
-## Configuração do banco de dados
-
-```sql
-CREATE DATABASE base;
-```
-
-Credenciais em `automanager/src/main/resources/application.properties`:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/base
-spring.datasource.username=root
-spring.datasource.password=root
-```
-
-> `ddl-auto=create` recria as tabelas a cada inicialização. Troque por `update` para preservar dados entre execuções.
-
-## Como executar
-
-```bash
-cd automanager
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./mvnw spring-boot:run
-```
-
-A aplicação sobe em `http://localhost:8080`. Na inicialização, seed data é inserido automaticamente (1 empresa, 4 usuários, 1 veículo, 2 vendas).
-
-## Autenticação
-
-Todas as rotas (exceto `/autenticacao`) exigem JWT no header.
-
-```bash
-# 1. Login
-curl -X POST http://localhost:8080/autenticacao \
-  -H "Content-Type: application/json" \
-  -d '{"nomeUsuario":"admin","senha":"admin123"}'
-
-# Resposta: { "token": "Bearer eyJhbGci..." }
-
-# 2. Usar o token
-curl http://localhost:8080/usuario \
-  -H "Authorization: Bearer eyJhbGci..."
-```
-
-### Usuários seed
-
-| Username | Senha | Role |
-|---|---|---|
-| `admin` | `admin123` | ADMINISTRADOR |
-| `meuidolotemnomeeéflaviocaçarato` | `FlavioMouseHunter2011` | GERENTE |
-| `dompedrofornecedor` | `123456` | VENDEDOR |
-| `dompedrocliente` | `123456` | CLIENTE |
-
-## Hierarquia de roles
-
-```
-ADMINISTRADOR
-  └── GERENTE
-        └── VENDEDOR
-              └── CLIENTE
-```
-
-Role superior herda as permissões de todas abaixo.
-
-## Permissões por rota
-
-| Rota | Método | Role mínima |
-|---|---|---|
-| `/autenticacao` | POST | público |
-| `/usuario` | GET | GERENTE |
-| `/empresa/{id}/usuario` | POST | GERENTE |
-| `/usuario/{id}` | PUT / DELETE | GERENTE |
-| `/usuario/{id}/perfil` | POST / DELETE | ADMINISTRADOR |
-| `/usuario/{id}/empresa/{empresaId}` | PUT | ADMINISTRADOR |
-| `/empresa` | GET | autenticado |
-| `/empresa` | POST / PUT / DELETE | ADMINISTRADOR |
-| `/veiculo` | GET | autenticado |
-| `/usuario/{id}/veiculo` | POST | VENDEDOR |
-| `/veiculo/{id}` | PUT / DELETE | VENDEDOR |
-| `/venda` | GET (all) | GERENTE |
-| `/venda/{id}` / `/usuario/{id}/venda` | GET | VENDEDOR |
-| `/venda` | POST | VENDEDOR |
-| `/venda/{id}` | PUT / DELETE | GERENTE |
-| `/mercadoria` | GET | autenticado |
-| `/mercadoria/empresa/{id}` | POST | GERENTE |
-| `/mercadoria/{id}` | PUT / DELETE | GERENTE |
-| `/servico` | GET | autenticado |
-| `/servico/empresa/{id}` | POST | GERENTE |
-| `/servico/{id}` | PUT / DELETE | GERENTE |
-
-## Fluxo de segurança
-
-```
-Request
-  → JwtAuthenticationFilter       # valida token, popula SecurityContext
-  → Spring Security filter chain  # .anyRequest().authenticated() → 401 se sem token
-  → Controller method
-      → @PreAuthorize(...)         # checa role → 403 se sem permissão
-          → executa ou nega
-```
-
-Todas as respostas incluem `_links` HATEOAS para navegação entre recursos.
-# webiii-atv4
+| MySQL Connector | 8.x |
+| JWT (jjwt) | 0.11.5 |
