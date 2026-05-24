@@ -12,7 +12,7 @@
 	<artifactId>automanager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>automanager</name>
-	<description>O Gerson é um soldado que não via a guerra, por causa de linux ... Tchola</description>
+	<description>O Gerson é um soldado que não vai a guerra, por causa de linux ... Tchola</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
